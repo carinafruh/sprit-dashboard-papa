@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>⛽ Spritpreis-Dashboard – Papa</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{min-height:100vh;background:#f0f4f8;font-family:'DM Sans','Segoe UI',sans-serif;color:#1e293b;}
+    ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px;}
+
+    #app{max-width:560px;margin:0 auto;}
+    .header{padding:20px 18px 0;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:10;box-shadow:0 1px 8px rgba(0,0,0,.06);}
+    .content{padding:16px 18px 36px;}
+
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+    .card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);transform:translateY(-1px);}
+
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+
+    button{cursor:pointer;border:none;font-family:inherit;font-weight:600;transition:all .15s;}
+    button:hover{filter:brightness(.96);}
+
+    .pill{padding:6px 14px;font-size:12px;border-radius:8px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid transparent;transition:all .15s;}
+    .pill.on{background:#2563eb;color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3);}
+    .pill.off{background:#f1f5f9;border-color:#e2e8f0;color:#64748b;}
+    .pill.off:hover{background:#e2e8f0;color:#334155;}
+
+    .srow{padding:13px 14px;border-radius:12px;display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #e2e8f0;transition:all .2s;cursor:pointer;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .srow:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-1px);}
+    .srow.best{border-color:#bbf7d0;background:#f0fdf4;}
+    .srow.dinkel{border-color:#fed7aa;background:#fff7ed;}
+    .srow.dimmed{opacity:.4;}
+
+    .slabel{font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+    .slabel::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+
+    .ovbtn{display:flex;align-items:center;gap:8px;width:100%;padding:13px 15px;background:linear-gradient(135deg,#fff7ed,#fff);border:1px solid #fed7aa;border-radius:14px;color:#ea580c;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;margin-bottom:18px;box-shadow:0 1px 4px rgba(234,88,12,.1);}
+    .ovbtn:hover{background:linear-gradient(135deg,#ffedd5,#fff7ed);box-shadow:0 4px 12px rgba(234,88,12,.15);}
+
+    .price{font-family:'Space Mono','Courier New',monospace;}
+
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 1.8s ease-in-out infinite;display:inline-block;}
+
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .fi{animation:fadeIn .3s ease forwards;}
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+
+    .backbtn{background:#f1f5f9;color:#475569;padding:7px 14px;font-size:12px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:14px;display:inline-flex;align-items:center;gap:5px;}
+    .backbtn:hover{background:#e2e8f0;}
+
+    .tipbox{margin-top:8px;padding:10px 13px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:12px;color:#2563eb;font-weight:500;}
+
+    .screen{display:none;}.screen.active{display:block;}
+
+    .stat-box{background:#f8fafc;border-radius:9px;padding:10px;text-align:center;border:1px solid #e2e8f0;}
+
+    /* Section divider */
+    .section-gap{margin-bottom:22px;}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- STICKY HEADER -->
+  <div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+      <div>
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#2563eb;font-weight:700;margin-bottom:2px;">⛽ Spritpreis-Dashboard</div>
+        <h1 style="font-size:22px;font-weight:700;line-height:1.2;color:#0f172a;">Hallo Papa! 👋</h1>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Steinbach am Wald · Dinkelsbühl · Crailsheim</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:3px;">
+          <span class="live-dot"></span>
+          <span style="font-size:11px;color:#22c55e;font-weight:600;">LIVE</span>
+        </div>
+        <div id="lastUpd" style="font-size:11px;color:#94a3b8;"></div>
+        <div id="workdayBadge" style="margin-top:5px;display:none;">
+          <span class="badge" style="background:#dbeafe;color:#2563eb;border:1px solid #bfdbfe;">💼 Arbeitstag</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;padding-bottom:14px;flex-wrap:wrap;align-items:center;">
+      <button class="pill on" onclick="setKst('e5')" id="btn-e5">Super E5</button>
+      <button class="pill off" onclick="setKst('e10')" id="btn-e10">Super E10</button>
+      <button class="pill off" onclick="setKst('diesel')" id="btn-diesel">Diesel</button>
+      <button onclick="loadAll()" style="margin-left:auto;background:#f1f5f9;color:#64748b;padding:6px 12px;font-size:13px;border:1px solid #e2e8f0;border-radius:10px;">↻</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="screen-dashboard" class="screen active content fi">
+
+    <button class="ovbtn" onclick="showOverview()">
+      <span style="font-size:16px;">📊</span>
+      <span>Gesamtübersicht – Preisverlauf aller Tankstellen</span>
+      <span style="margin-left:auto;font-size:16px;">→</span>
+    </button>
+
+    <!-- Beste Preise -->
+    <div class="grid2">
+      <div class="card" style="padding:14px;">
+        <div style="font-size:9px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;margin-bottom:6px;">🏠 Bester Heimatpreis</div>
+        <div id="cheapH-price" class="price" style="font-size:22px;font-weight:700;color:#16a34a;">—</div>
+        <div id="cheapH-name" style="font-size:10px;color:#64748b;margin-top:2px;"></div>
+      </div>
+      <div id="arbeit-card" class="card" style="padding:14px;opacity:.45;">
+        <div id="arbeit-card-label" style="font-size:9px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;margin-bottom:6px;">💼 Crailsheim</div>
+        <div id="cheapA-price" class="price" style="font-size:22px;font-weight:700;color:#2563eb;">—</div>
+        <div id="cheapA-name" style="font-size:10px;color:#94a3b8;margin-top:2px;">Wochenende</div>
+      </div>
+    </div>
+
+    <!-- Heimat -->
+    <div class="section-gap">
+      <div class="slabel"><span>🏠 Heimat · Steinbach am Wald / Stimpfach</span></div>
+      <div id="heimat-list"></div>
+    </div>
+
+    <!-- Dinkelsbühl -->
+    <div class="section-gap">
+      <div class="slabel" style="color:#ea580c;"><span>🏙️ Dinkelsbühl</span></div>
+      <div id="dinkel-list"></div>
+    </div>
+
+    <!-- Arbeitsweg -->
+    <div class="section-gap">
+      <div class="slabel" id="arbeit-label"><span style="opacity:.5;">💼 Arbeitsweg · Crailsheim (Mo–Fr)</span></div>
+      <div id="arbeit-list"></div>
+      <div id="tip-box" class="tipbox" style="display:none;">💡 Tipp: 15–18 Uhr tanken spart oft ein paar Cent!</div>
+    </div>
+
+    <div style="margin-top:8px;font-size:10px;color:#cbd5e1;text-align:center;" id="footer-kst">
+      Preise via Tankerkönig · Super E5 · Auf Tankstelle tippen für Verlauf
+    </div>
+  </div>
+
+  <!-- SINGLE CHART -->
+  <div id="screen-single" class="screen content fi">
+    <button class="backbtn" onclick="showDashboard()">← Zurück</button>
+    <div class="card" style="padding:20px;">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;font-weight:700;">Preisverlauf · 14 Tage</div>
+        <div id="single-name" style="font-size:19px;font-weight:700;margin-top:3px;color:#0f172a;"></div>
+        <div id="single-sub" style="font-size:12px;color:#64748b;"></div>
+      </div>
+      <canvas id="singleChart" style="width:100%;height:180px;"></canvas>
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div class="stat-box">
+          <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Aktuell</div>
+          <div id="stat-cur" class="price" style="font-size:16px;font-weight:700;">—</div>
+        </div>
+        <div class="stat-box">
+          <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">14-Tage Min</div>
+          <div id="stat-min" class="price" style="font-size:16px;font-weight:700;color:#16a34a;">—</div>
+        </div>
+        <div class="stat-box">
+          <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">14-Tage Max</div>
+          <div id="stat-max" class="price" style="font-size:16px;font-weight:700;color:#dc2626;">—</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:#cbd5e1;text-align:center;">* Verlaufsdaten sind Schätzungen auf Basis typischer Preisschwankungen</div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW CHART -->
+  <div id="screen-overview" class="screen content fi">
+    <button class="backbtn" onclick="showDashboard()">← Zurück</button>
+    <div class="card" style="padding:20px;">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;font-weight:700;">Gesamtübersicht · alle Tankstellen · 14 Tage</div>
+        <div style="font-size:19px;font-weight:700;margin-top:3px;color:#0f172a;">Preisentwicklung</div>
+        <div id="overview-sub" style="font-size:12px;color:#64748b;"></div>
+      </div>
+      <canvas id="overviewChart" style="width:100%;height:220px;"></canvas>
+      <div style="margin-top:13px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+        <div style="font-size:9px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Legende</div>
+        <div id="legend-items" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:#cbd5e1;text-align:center;">* Verlaufsdaten sind Schätzungen auf Basis typischer Preisschwankungen</div>
+    </div>
+  </div>
+
+</div>
+<script>
+const API_KEY="95fba7f4-bdc1-4dc6-906b-290729926419";
+const LABELS={e5:"Super E5",e10:"Super E10",diesel:"Diesel"};
+const STEINBACH={lat:49.0713,lng:10.1568};
+const CRAILSHEIM={lat:49.133,lng:10.075};
+const DINKEL={lat:49.0739,lng:10.3253};
+const HEIMAT_PAL=["#16a34a","#15803d","#22c55e","#4ade80"];
+const ARBEIT_PAL=["#2563eb","#3b82f6","#60a5fa","#93c5fd"];
+
+let kst="e5",heimatData=[],arbeitData=[],dinkelData=null;
+const isWorkday=()=>{const d=new Date().getDay();return d>=1&&d<=5;};
+
+function fakeHistory(base,days=14){
+  let p=base;
+  return Array.from({length:days},(_,i)=>{
+    const d=new Date();d.setDate(d.getDate()-(days-1-i));
+    p=Math.max(1.4,Math.min(2.2,+(p+(Math.random()-.48)*.025).toFixed(3)));
+    return{label:d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}),val:p};
+  });
+}
+
+async function fetchNearby(lat,lng,count=4){
+  try{
+    const r=await fetch(`https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=15&sort=price&type=${kst}&apikey=${API_KEY}`);
+    const d=await r.json();
+    if(d.ok&&d.stations)return d.stations.slice(0,count);
+  }catch(_){}
+  return[];
+}
+
+function mapS(s,i,pal,gr){
+  return{
+    id:s.id||`s-${i}`,name:s.name||s.brand||"Tankstelle",
+    ort:s.place||s.city||"",
+    strasse:s.street?`${s.street} ${s.houseNumber||""}`.trim():"",
+    preis:s.price?+s.price.toFixed(3):null,
+    dist:s.dist?+s.dist.toFixed(1):null,
+    offen:s.isOpen,farbe:pal[i%pal.length],gruppe:gr
+  };
+}
+
+async function loadAll(){
+  document.getElementById("lastUpd").textContent="Lade …";
+  try{
+    const[hR,aR,dR]=await Promise.all([
+      fetchNearby(STEINBACH.lat,STEINBACH.lng,4),
+      fetchNearby(CRAILSHEIM.lat,CRAILSHEIM.lng,3),
+      fetchNearby(DINKEL.lat,DINKEL.lng,6)
+    ]);
+    heimatData=hR.map((s,i)=>mapS(s,i,HEIMAT_PAL,"heimat"));
+    arbeitData=aR.map((s,i)=>mapS(s,i,ARBEIT_PAL,"arbeit"));
+    const jet=dR.find(s=>(s.brand||s.name||"").toLowerCase().includes("jet"));
+    dinkelData=jet?mapS(jet,0,["#ea580c"],"dinkel")
+      :{id:"jet-dinkel",name:"JET",ort:"Dinkelsbühl",strasse:"Feuchtwanger Str. 13",preis:null,dist:null,offen:null,farbe:"#ea580c",gruppe:"dinkel"};
+    document.getElementById("lastUpd").textContent="Stand "+new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";
+  }catch(e){document.getElementById("lastUpd").textContent="Fehler";console.error(e);}
+  renderDashboard();
+}
+
+function setKst(k){
+  kst=k;
+  ["e5","e10","diesel"].forEach(x=>document.getElementById("btn-"+x).className="pill "+(x===k?"on":"off"));
+  document.getElementById("footer-kst").textContent=`Preise via Tankerkönig · ${LABELS[k]} · Auf Tankstelle tippen für Verlauf`;
+  loadAll();
+}
+
+function srowHTML(s,isBest,isDimmed,extraClass=""){
+  const cls=["srow",isBest?"best":"",isDimmed?"dimmed":"",extraClass].filter(Boolean).join(" ");
+  const badge=isBest?`<span class="badge" style="margin-left:6px;background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;font-size:9px;">günstigste</span>`:"";
+  const sub=[s.ort,s.strasse,s.dist!=null?s.dist+" km":null].filter(Boolean).join(" · ");
+  const preis=s.preis!=null
+    ?`<div class="price" style="font-size:18px;font-weight:700;color:${s.farbe};">${s.preis.toFixed(3)}<span style="font-size:10px;color:#94a3b8;">€</span></div>`
+    :`<div style="font-size:12px;color:#cbd5e1;">—</div>`;
+  const status=s.offen===false?`<div style="font-size:9px;color:#dc2626;">geschlossen</div>`
+    :s.offen===true?`<div style="font-size:9px;color:#16a34a;">geöffnet</div>`:"";
+  return`<div class="${cls}" onclick="openSingle('${s.id}')">
+    <div style="width:10px;height:10px;border-radius:50%;background:${s.farbe};flex-shrink:0;box-shadow:0 0 0 3px ${s.farbe}22;"></div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}${badge}</div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:1px;">${sub}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">${preis}${status}<div style="font-size:9px;color:#cbd5e1;margin-top:2px;">📈 Verlauf</div></div>
+  </div>`;
+}
+
+function renderDashboard(){
+  const wd=isWorkday();
+  document.getElementById("workdayBadge").style.display=wd?"block":"none";
+
+  const cheapH=heimatData.filter(s=>s.preis).sort((a,b)=>a.preis-b.preis)[0];
+  if(cheapH){
+    document.getElementById("cheapH-price").textContent=cheapH.preis.toFixed(3)+"€";
+    document.getElementById("cheapH-price").style.color=cheapH.farbe;
+    document.getElementById("cheapH-name").textContent=cheapH.name;
+  }
+
+  const cheapA=arbeitData.filter(s=>s.preis).sort((a,b)=>a.preis-b.preis)[0];
+  const arbCard=document.getElementById("arbeit-card");
+  if(wd&&cheapA){
+    arbCard.style.opacity="1";
+    arbCard.style.borderColor="#bfdbfe";
+    document.getElementById("arbeit-card-label").style.color="#2563eb";
+    document.getElementById("arbeit-card-label").textContent="💼 Bester Arbeitspreis";
+    document.getElementById("cheapA-price").textContent=cheapA.preis.toFixed(3)+"€";
+    document.getElementById("cheapA-name").textContent=cheapA.name;
+  }else{
+    arbCard.style.opacity=".45";
+    arbCard.style.borderColor="#e2e8f0";
+    document.getElementById("arbeit-card-label").textContent="💼 Crailsheim";
+    document.getElementById("cheapA-price").textContent="—";
+    document.getElementById("cheapA-name").textContent="Wochenende";
+  }
+
+  document.getElementById("heimat-list").innerHTML=
+    heimatData.map(s=>srowHTML(s,cheapH&&s.id===cheapH.id,false)).join("");
+  document.getElementById("dinkel-list").innerHTML=
+    dinkelData?srowHTML(dinkelData,false,false,"dinkel"):"";
+
+  const al=document.getElementById("arbeit-label");
+  al.style.color=wd?"#2563eb":"#94a3b8";
+  al.innerHTML=wd
+    ?`<span>💼 Arbeitsweg · Crailsheim (Mo–Fr)</span>`
+    :`<span style="opacity:.6;">💼 Arbeitsweg · Crailsheim (Mo–Fr)</span><span class="badge" style="background:#f1f5f9;color:#94a3b8;border:1px solid #e2e8f0;">Wochenende</span>`;
+
+  document.getElementById("arbeit-list").innerHTML=
+    arbeitData.map(s=>srowHTML(s,wd&&cheapA&&s.id===cheapA.id,!wd)).join("");
+  document.getElementById("tip-box").style.display=wd?"block":"none";
+}
+
+function drawChart(canvasId,datasets,labels,colors){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas)return;
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth*dpr,H=canvas.offsetHeight*dpr;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  ctx.scale(dpr,dpr);
+  const rW=canvas.offsetWidth,rH=canvas.offsetHeight;
+  const pad={top:10,right:10,bottom:32,left:48};
+  const cW=rW-pad.left-pad.right,cH=rH-pad.top-pad.bottom;
+
+  const allVals=datasets.flatMap(d=>d.map(p=>p.val));
+  const minV=Math.min(...allVals)*.9995,maxV=Math.max(...allVals)*1.0005;
+  const range=maxV-minV||.1;
+
+  // White bg
+  ctx.fillStyle="#fff";
+  ctx.fillRect(0,0,rW,rH);
+
+  // Grid
+  for(let i=0;i<=4;i++){
+    const y=pad.top+cH*(i/4);
+    ctx.strokeStyle="#f1f5f9";ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+cW,y);ctx.stroke();
+    ctx.fillStyle="#94a3b8";ctx.font="10px 'Courier New',monospace";ctx.textAlign="right";
+    ctx.fillText((maxV-range*(i/4)).toFixed(2),pad.left-4,y+4);
+  }
+
+  // X labels
+  const step=Math.ceil(labels.length/6);
+  ctx.fillStyle="#94a3b8";ctx.font="10px 'DM Sans','Segoe UI',sans-serif";ctx.textAlign="center";
+  labels.forEach((l,i)=>{
+    if(i%step===0){
+      const x=pad.left+cW*(i/(labels.length-1));
+      ctx.fillText(l,x,rH-6);
+    }
+  });
+
+  // Lines
+  datasets.forEach((data,di)=>{
+    const color=colors[di]||"#2563eb";
+    // Gradient fill
+    const grd=ctx.createLinearGradient(0,pad.top,0,pad.top+cH);
+    grd.addColorStop(0,color+"33");
+    grd.addColorStop(1,color+"05");
+    ctx.beginPath();
+    data.forEach((p,i)=>{
+      const x=pad.left+cW*(i/(data.length-1));
+      const y=pad.top+cH*(1-(p.val-minV)/range);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    // Close path for fill
+    ctx.lineTo(pad.left+cW,pad.top+cH);
+    ctx.lineTo(pad.left,pad.top+cH);
+    ctx.closePath();
+    ctx.fillStyle=grd;ctx.fill();
+
+    // Line
+    ctx.strokeStyle=color;ctx.lineWidth=2;ctx.lineJoin="round";ctx.lineCap="round";
+    ctx.beginPath();
+    data.forEach((p,i)=>{
+      const x=pad.left+cW*(i/(data.length-1));
+      const y=pad.top+cH*(1-(p.val-minV)/range);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  });
+}
+
+function showDashboard(){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("screen-dashboard").classList.add("active");
+}
+
+function openSingle(id){
+  const all=[...heimatData,dinkelData,...arbeitData].filter(Boolean);
+  const s=all.find(x=>x.id===id);if(!s)return;
+  document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
+  document.getElementById("screen-single").classList.add("active");
+  document.getElementById("single-name").textContent=s.name;
+  document.getElementById("single-sub").textContent=s.ort+" · "+LABELS[kst];
+  const hist=fakeHistory(s.preis||1.799);
+  const vals=hist.map(h=>h.val);
+  document.getElementById("stat-cur").textContent=(s.preis||vals[vals.length-1]).toFixed(3)+" €";
+  document.getElementById("stat-cur").style.color=s.farbe;
+  document.getElementById("stat-min").textContent=Math.min(...vals).toFixed(3)+" €";
+  document.getElementById("stat-max").textContent=Math.max(...vals).toFixed(3)+" €";
+  setTimeout(()=>drawChart("singleChart",[hist],hist.map(h=>h.label),[s.farbe]),50);
+}
+
+function showOverview(){
+  document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
+  document.getElementById("screen-overview").classList.add("active");
+  document.getElementById("overview-sub").textContent=`${LABELS[kst]} · Heimat + Dinkelsbühl + Crailsheim`;
+  const all=[...heimatData,dinkelData,...arbeitData].filter(s=>s&&s.preis);
+  const colors=all.map(s=>s.farbe);
+  const datasets=all.map(s=>fakeHistory(s.preis));
+  const labels=datasets[0]?.map(h=>h.label)||[];
+  document.getElementById("legend-items").innerHTML=all.map(s=>`
+    <div style="display:flex;align-items:center;gap:5px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${s.farbe};flex-shrink:0;"></div>
+      <span style="font-size:10px;color:#475569;">${s.name} · ${s.ort}</span>
+    </div>`).join("");
+  setTimeout(()=>drawChart("overviewChart",datasets,labels,colors),50);
+}
+
+window.addEventListener("load",()=>{
+  if(isWorkday())document.getElementById("workdayBadge").style.display="block";
+  document.getElementById("overview-sub").textContent=`${LABELS[kst]} · Heimat + Dinkelsbühl + Crailsheim`;
+  loadAll();
+});
+</script>
+</body>
+</html>
