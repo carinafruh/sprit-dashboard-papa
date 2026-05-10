@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⛽ Diesel Monitor – Dinkelsbühl</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#f4f2ee; --bg2:#ede9e2; --surface:#ffffff;
+  --border:#e5e0d8; --border2:#d6d0c7;
+  --text:#1a1814; --text2:#6b6560; --text3:#9b9590;
+  --green:#1d6b3e; --green-bg:#edf7f1; --green-b:#b6dfc7;
+  --red:#c0392b; --amber:#d97706; --amber-bg:#fef3cd;
+  --shadow:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --shadow-h:0 4px 20px rgba(0,0,0,.10);
+  --r:16px; --sans:'Outfit','Segoe UI',sans-serif;
+}
+body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; padding:24px 16px 60px; }
+.header { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:24px; animation:fadeUp .4s ease; }
+.eyebrow { font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--text3); margin-bottom:5px; }
+h1 { font-size:26px; font-weight:800; color:var(--text); letter-spacing:-.03em; line-height:1.1; }
+.sub { font-size:13px; color:var(--text2); margin-top:4px; }
+.hint { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:500; color:var(--amber); background:var(--amber-bg); border:1px solid #fde68a; border-radius:99px; padding:5px 13px; margin-top:10px; }
+.header-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.pill { display:flex; align-items:center; gap:7px; border-radius:99px; padding:6px 14px; font-size:11px; font-weight:500; transition:all .3s; }
+.pill.ok   { background:var(--green-bg); border:1px solid var(--green-b); color:var(--green); }
+.pill.load { background:#f7f5f0; border:1px solid var(--border); color:var(--text3); }
+.pill.err  { background:#fef2f2; border:1px solid #fca5a5; color:var(--red); }
+.dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.dot.ok { background:var(--green); animation:blink 2s infinite; }
+.dot.err { background:var(--red); }
+.spin { display:inline-block; animation:spin 1.2s linear infinite; }
+.btns { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+button { background:var(--surface); border:1px solid var(--border2); border-radius:99px; color:var(--text2); font-family:var(--sans); font-size:11px; font-weight:500; padding:6px 14px; cursor:pointer; transition:all .2s; }
+button:hover:not(:disabled) { background:var(--bg2); border-color:var(--text3); color:var(--text); }
+button.on { background:var(--green); border-color:var(--green); color:#fff; }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.route-banner { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:13px 18px; margin-bottom:20px; display:flex; align-items:center; gap:9px; flex-wrap:wrap; box-shadow:var(--shadow); }
+.stop { font-weight:700; font-size:13px; }
+.arrow { color:var(--text3); font-size:12px; }
+.rlbl { margin-left:auto; font-size:10px; color:var(--text3); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+.section { margin-bottom:22px; animation:fadeUp .4s ease; }
+.sec-title { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); margin-bottom:11px; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:11px; }
+.card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r); padding:17px 15px; box-shadow:var(--shadow); position:relative; transition:transform .2s,box-shadow .2s; }
+.card:hover { transform:translateY(-2px); box-shadow:var(--shadow-h); }
+.card.best { border-color:var(--green-b); background:linear-gradient(135deg,#fff 60%,#f0faf4); }
+.badge { position:absolute; top:11px; right:11px; background:var(--green); color:#fff; border-radius:99px; padding:2px 9px; font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+.brand-row { display:flex; align-items:center; gap:7px; margin-bottom:11px; }
+.brand-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.brand-name { font-size:12px; font-weight:600; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:125px; }
+.price { font-size:34px; font-weight:800; letter-spacing:-.04em; line-height:1; margin-bottom:8px; transition:color .3s; }
+.price.best { color:var(--green); }
+.price.norm { color:var(--text); }
+.price.none { color:var(--text3); }
+.punit { font-size:13px; color:var(--text3); margin-left:2px; font-weight:400; }
+.addr { font-size:11px; color:var(--text3); line-height:1.6; }
+.closed { font-size:10px; color:var(--red); margin-top:3px; font-weight:500; }
+.diff { margin-top:7px; font-size:11px; color:var(--amber); font-weight:500; }
+.tip-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:17px 18px; box-shadow:var(--shadow); }
+.tip-title { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); margin-bottom:11px; }
+.tip-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
+.tip-card { background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:11px 13px; }
+.tip-lbl { font-size:11px; color:var(--text3); margin-bottom:4px; }
+.tip-val { font-size:15px; font-weight:700; }
+.tip-val.g { color:var(--green); }
+.tip-val.w { color:var(--text); }
+.tip-sub  { font-size:11px; color:var(--green); margin-top:3px; }
+.tip-sub3 { font-size:11px; color:var(--text3); margin-top:3px; }
+.skel-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:11px; margin-bottom:22px; }
+.skel-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:17px 15px; box-shadow:var(--shadow); }
+.skel { border-radius:6px; background:linear-gradient(90deg,var(--border) 25%,var(--bg2) 50%,var(--border) 75%); background-size:200% 100%; animation:shimmer 1.5s ease infinite; }
+.footer { margin-top:24px; text-align:center; font-size:10px; color:var(--text3); }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+@keyframes blink   { 0%,100%{opacity:1} 50%{opacity:.3} }
+@keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="eyebrow">Diesel · Echtzeit · Tankerkönig</div>
+    <h1 id="title">🏠 Dinkelsbühl</h1>
+    <div class="sub" id="subtitle">Günstigste Tankstellen vor Ort</div>
+    <div class="hint" id="wed-hint">💡 Mittwochs wechselt das Dashboard automatisch zur Routen-Ansicht</div>
+  </div>
+  <div class="header-right">
+    <div class="pill load" id="pill">
+      <span class="spin" id="pill-icon">⟳</span>
+      <span id="pill-txt">Verbinde…</span>
+    </div>
+    <div class="btns">
+      <button id="btn-reload" onclick="doLoad()">⟳ Aktualisieren</button>
+      <button id="btn-norm"   onclick="setMode(false)">Normal</button>
+      <button id="btn-wed"    onclick="setMode(true)">Mittwoch</button>
+    </div>
+  </div>
+</div>
+
+<div id="skeleton">
+  <div class="skel-grid">
+    <div class="skel-card"><div class="skel" style="width:60px;height:10px;margin-bottom:13px"></div><div class="skel" style="width:100px;height:30px;margin-bottom:10px"></div><div class="skel" style="width:120px;height:9px"></div></div>
+    <div class="skel-card"><div class="skel" style="width:60px;height:10px;margin-bottom:13px"></div><div class="skel" style="width:100px;height:30px;margin-bottom:10px"></div><div class="skel" style="width:120px;height:9px"></div></div>
+    <div class="skel-card"><div class="skel" style="width:60px;height:10px;margin-bottom:13px"></div><div class="skel" style="width:100px;height:30px;margin-bottom:10px"></div><div class="skel" style="width:120px;height:9px"></div></div>
+  </div>
+</div>
+
+<div id="content" style="display:none"></div>
+<div class="footer">Echtzeit-Daten: Tankerkönig · MTS-K · Aktualisierung alle 5 Min</div>
+
+<script>
+var COLORS = {
+  ARAL:"#0066b2",SHELL:"#c8960c",JET:"#d97706",ESSO:"#c0392b",
+  TOTAL:"#c0392b",TOTALENERGIES:"#c0392b",BAYWA:"#1d6b3e",BP:"#00843d",
+  AGIP:"#c0392b",WESTFALEN:"#003f7f",AVIA:"#c0392b",HEM:"#6d28d9",
+  STAR:"#b45309",ORLEN:"#9b1c1c",OIL:"#c2410c"
+};
+var forceMode = null;
+function isWed() { return forceMode!==null ? forceMode : new Date().getDay()===3; }
+function brandColor(b) { return COLORS[(b||"").toUpperCase()]||"#6b7280"; }
+function getPrice(s) {
+  var p = s.price!==undefined ? s.price : (s.diesel!==undefined ? s.diesel : null);
+  if (p===false||p===null) return null;
+  var n = parseFloat(p); return isNaN(n)?null:n;
+}
+
+// Netlify Function als sicherer Proxy
+function fetchArea(areaKey, callback) {
+  var url = "/.netlify/functions/preise?area=" + areaKey;
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  xhr.timeout = 10000;
+  xhr.onload = function() {
+    try {
+      var d = JSON.parse(xhr.responseText);
+      callback(d.ok ? (d.stations||[]) : []);
+    } catch(e) { callback([]); }
+  };
+  xhr.onerror = xhr.ontimeout = function() { callback([]); };
+  xhr.send();
+}
+
+function cardHTML(s, minP) {
+  var p = getPrice(s);
+  var best = p!==null && Math.abs(p-minP)<0.002;
+  var diff = p!==null && !best ? p-minP : null;
+  var c = brandColor(s.brand);
+  return '<div class="card '+(best?"best":"")+'">'
+    +(best&&p!==null?'<div class="badge">Günstigste</div>':'')
+    +'<div class="brand-row"><div class="brand-dot" style="background:'+c+'"></div>'
+    +'<span class="brand-name">'+(s.brand||s.name||"–")+'</span></div>'
+    +'<div class="price '+(p!==null?(best?"best":"norm"):"none")+'">'+(p!==null?p.toFixed(3):"–.–––")+'<span class="punit">€</span></div>'
+    +'<div class="addr">'+(s.street||"")+" "+(s.houseNumber||"")+'</div>'
+    +'<div class="addr">'+(s.dist||0).toFixed(1)+' km entfernt</div>'
+    +(s.isOpen===false?'<div class="closed">⚠ Geschlossen</div>':'')
+    +(diff&&diff>0.001?'<div class="diff">+'+diff.toFixed(3)+' € teurer</div>':'')
+    +'</div>';
+}
+
+function secHTML(emoji, title, stations) {
+  var all=[];
+  for(var i=0;i<(stations||[]).length;i++){var p=getPrice(stations[i]);if(p!==null)all.push({s:stations[i],p:p});}
+  all.sort(function(a,b){return a.p-b.p;}); all=all.slice(0,3);
+  if(!all.length) return '<div class="section"><div class="sec-title">'+emoji+' '+title+'</div><div style="color:var(--text3);font-size:12px;padding:8px 0">Keine Preise verfügbar.</div></div>';
+  var minP=all[0].p, cards="";
+  for(var j=0;j<all.length;j++){all[j].s.price=all[j].p; cards+=cardHTML(all[j].s,minP);}
+  return '<div class="section"><div class="sec-title">'+emoji+'&nbsp; '+title+'</div><div class="card-grid">'+cards+'</div></div>';
+}
+
+function render(data) {
+  var wed=isWed();
+  var active=wed?(data.fremdingen||[]).concat(data.monheim||[]).concat(data.wemding||[]):(data.dinkelsbuhl||[]);
+  var withP=[];
+  for(var i=0;i<active.length;i++){var p=getPrice(active[i]);if(p!==null)withP.push({s:active[i],p:p});}
+  var best=null,worst=null;
+  for(var j=0;j<withP.length;j++){if(!best||withP[j].p<best.p)best=withP[j];if(!worst||withP[j].p>worst.p)worst=withP[j];}
+
+  var tip="";
+  if(best){
+    var savings=worst&&worst.s.id!==best.s.id&&worst.p>best.p
+      ?'<div class="tip-card"><div class="tip-lbl">Ersparnis vs. teuerste (50 L)</div><div class="tip-val w">'+((worst.p-best.p)*50).toFixed(2)+' €</div><div class="tip-sub3">'+best.s.brand+' vs. '+worst.s.brand+'</div></div>'
+      :'<div class="tip-card"><div class="tip-lbl">Bestes Zeitfenster heute</div><div class="tip-val w">18:00 – 19:00 Uhr</div><div class="tip-sub">ca. 2–3 Cent/L günstiger</div></div>';
+    tip='<div class="tip-box"><div class="tip-title">💡 '+(wed?"Empfehlung für heute":"Spartipp")+'</div><div class="tip-grid">'
+      +'<div class="tip-card"><div class="tip-lbl">'+(wed?"Günstigste auf der Route":"Günstigste jetzt")+'</div>'
+      +'<div class="tip-val g">'+best.s.brand+' · '+best.p.toFixed(3)+' €</div>'
+      +'<div class="tip-sub">'+(best.s.street||"")+" "+(best.s.houseNumber||"")+' · '+(best.s.dist||0).toFixed(1)+' km</div></div>'
+      +savings+'</div></div>';
+  }
+
+  var html="";
+  if(wed){
+    html+='<div class="route-banner"><span class="stop">Dinkelsbühl</span><span class="arrow">→</span><span class="stop">Fremdingen</span><span class="arrow">→</span><span class="stop">Monheim</span><span class="arrow">↔</span><span class="stop">Wemding</span><span class="rlbl">Mittwoch · Arbeitsroute</span></div>';
+    html+=secHTML("📍","Fremdingen · Auf dem Weg (B25)",data.fremdingen);
+    html+=secHTML("🏭","Monheim · Nähe Hammer",data.monheim);
+    html+=secHTML("🏘","Wemding",data.wemding);
+  } else {
+    html+=secHTML("⛽","Tankstellen Dinkelsbühl · Diesel aktuell",data.dinkelsbuhl);
+  }
+  html+=tip;
+
+  document.getElementById("content").innerHTML=html;
+  document.getElementById("skeleton").style.display="none";
+  document.getElementById("content").style.display="block";
+  document.getElementById("title").textContent=wed?"🚗 Mittwoch-Route":"🏠 Dinkelsbühl";
+  document.getElementById("subtitle").textContent=wed?"Fremdingen · Monheim · Wemding":"Günstigste Tankstellen vor Ort";
+  document.getElementById("wed-hint").style.display=wed?"none":"inline-flex";
+}
+
+function setPill(state,txt){
+  document.getElementById("pill").className="pill "+state;
+  var icon=document.getElementById("pill-icon");
+  if(state==="load"){icon.className="spin";icon.textContent="⟳";}
+  else{icon.className="dot "+state;icon.textContent="";}
+  document.getElementById("pill-txt").textContent=txt;
+}
+
+var loaded={}, pending=0;
+function doLoad(){
+  document.getElementById("btn-reload").disabled=true;
+  document.getElementById("content").style.display="none";
+  document.getElementById("skeleton").style.display="block";
+  setPill("load","Lade…");
+  loaded={};
+  var keys=isWed()?["dinkelsbuhl","fremdingen","monheim","wemding"]:["dinkelsbuhl"];
+  pending=keys.length;
+  for(var i=0;i<keys.length;i++){
+    (function(k){
+      fetchArea(k,function(stations){
+        loaded[k]=stations; pending--;
+        if(pending===0){
+          var total=0;
+          for(var key in loaded) total+=loaded[key].length;
+          if(total===0){setPill("err","Keine Daten");}
+          else{render(loaded);var t=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});setPill("ok","Aktuell · "+t);}
+          document.getElementById("btn-reload").disabled=false;
+        }
+      });
+    })(keys[i]);
+  }
+}
+function setMode(val){
+  forceMode=(forceMode===val)?null:val;
+  document.getElementById("btn-norm").className=forceMode===false?"on":"";
+  document.getElementById("btn-wed").className=forceMode===true?"on":"";
+  doLoad();
+}
+if(new Date().getDay()===3) document.getElementById("btn-wed").className="on";
+setInterval(doLoad,5*60*1000);
+doLoad();
+</script>
+</body>
+</html>
